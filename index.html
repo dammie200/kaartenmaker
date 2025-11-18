@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaartenmaker (web)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Kaartenmaker</h1>
+    <p>Interactieve webversie van de Tkinter-tool. Kies je selectie, zoom naar de juiste plek en genereer een kaart.</p>
+  </header>
+
+  <main>
+    <section id="map-section">
+      <div id="map"></div>
+      <div class="hint">Sleep of zoom de kaart om de selectie te verplaatsen. Het centrum van de kaart wordt als middelpunt gebruikt.</div>
+    </section>
+
+    <section id="controls">
+      <div class="panel">
+        <h2>Adres</h2>
+        <form id="search-form">
+          <label for="address">Adres of plaats</label>
+          <div class="inline">
+            <input id="address" type="text" placeholder="Rijnhaven, Rotterdam" value="Rijnhaven, Rotterdam" />
+            <button type="submit">Center</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>Selectie</h2>
+        <div class="radio-group">
+          <label><input type="radio" name="shape" value="circle" checked> Cirkel</label>
+          <label><input type="radio" name="shape" value="square"> Vierkant</label>
+          <label><input type="radio" name="shape" value="rectangle"> Rechthoek</label>
+          <label><input type="radio" name="shape" value="paper"> Papierformaat</label>
+        </div>
+
+        <div id="shape-params"></div>
+        <label for="scale">Schaal (1:)</label>
+        <input id="scale" type="number" value="5000" min="1" step="100">
+      </div>
+
+      <div class="panel">
+        <h2>Lagen</h2>
+        <div class="layer-list" id="layer-list"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Export</h2>
+        <label for="format">Formaat</label>
+        <select id="format">
+          <option value="png" selected>PNG</option>
+          <option value="svg">SVG</option>
+          <option value="pdf">PDF</option>
+        </select>
+        <div class="actions">
+          <button id="preview-btn">Preview</button>
+          <button id="download-btn" class="primary">Download</button>
+        </div>
+        <p id="status" aria-live="polite"></p>
+      </div>
+
+      <div class="panel" id="preview-panel">
+        <h2>Preview</h2>
+        <div id="preview">Nog geen preview.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
