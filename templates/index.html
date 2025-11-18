@@ -8,21 +8,57 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-  <header>
-    <h1>Kaartenmaker</h1>
-    <p>Interactieve webversie van de Tkinter-tool. Kies je selectie, zoom naar de juiste plek en genereer een kaart.</p>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Kaartenmaker</p>
+      <h1>Stel je kaart samen zonder onnodig scrollen</h1>
+      <p class="lead">Kies je selectie, pas lagen en kleuren aan en bekijk direct een preview.</p>
+    </div>
+    <div class="quick-actions">
+      <button id="preview-btn" class="ghost">Preview</button>
+      <button id="download-btn" class="primary">Download</button>
+    </div>
   </header>
 
-  <main>
-    <section id="map-section">
-      <div id="map"></div>
-      <div class="hint">Sleep of zoom de kaart om de selectie te verplaatsen. Het centrum van de kaart wordt als middelpunt gebruikt.</div>
+  <main class="workspace">
+    <section class="map-column">
+      <div class="panel map-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Kaart</p>
+            <h2>Verplaats of zoom om je selectie te kiezen</h2>
+          </div>
+          <div class="status-inline" id="status" aria-live="polite"></div>
+        </div>
+        <div id="map"></div>
+        <div class="hint">Het centrum van de kaart wordt als middelpunt gebruikt.</div>
+      </div>
+
+      <div class="panel" id="preview-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Preview</p>
+            <h2>Controleer het resultaat</h2>
+          </div>
+          <select id="format">
+            <option value="png" selected>PNG</option>
+            <option value="svg">SVG</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
+        <div id="preview">Nog geen preview.</div>
+      </div>
     </section>
 
-    <section id="controls">
+    <section class="sidebar" id="controls">
       <div class="panel">
-        <h2>Adres</h2>
-        <form id="search-form">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Locatie</p>
+            <h2>Vind een adres</h2>
+          </div>
+        </div>
+        <form id="search-form" class="stacked">
           <label for="address">Adres of plaats</label>
           <div class="inline">
             <input id="address" type="text" placeholder="Rijnhaven, Rotterdam" value="Rijnhaven, Rotterdam" />
@@ -32,7 +68,12 @@
       </div>
 
       <div class="panel">
-        <h2>Selectie</h2>
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Selectie</p>
+            <h2>Vorm en schaal</h2>
+          </div>
+        </div>
         <div class="radio-group">
           <label><input type="radio" name="shape" value="circle" checked> Cirkel</label>
           <label><input type="radio" name="shape" value="square"> Vierkant</label>
@@ -40,20 +81,38 @@
           <label><input type="radio" name="shape" value="paper"> Papierformaat</label>
         </div>
 
-        <div id="shape-params"></div>
-        <label for="scale">Schaal (1:)</label>
-        <input id="scale" type="number" value="5000" min="1" step="100">
+        <div id="shape-params" class="stacked"></div>
+        <div class="stacked">
+          <label for="scale">Schaal (1:)</label>
+          <input id="scale" type="number" value="5000" min="1" step="100">
+        </div>
       </div>
 
       <div class="panel">
-        <h2>Lagen</h2>
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Lagen &amp; stijlen</p>
+            <h2>Schakel en kleur de kaart</h2>
+          </div>
+        </div>
         <div class="layer-list">
           {% for name, tags in tags.items() %}
           <details open>
             <summary>
               <label><input type="checkbox" class="layer-toggle" data-layer="{{ name }}" checked> {{ name }}</label>
             </summary>
-            {% if tags.values()|select('is sequence')|list %}
+            <div class="layer-styles">
+              <label>Vulling
+                <input type="color" data-style-layer="{{ name }}" data-style-prop="fill" value="{{ styles[name]['fill'] }}">
+              </label>
+              <label>Lijn
+                <input type="color" data-style-layer="{{ name }}" data-style-prop="edge" value="{{ styles[name]['edge'] }}">
+              </label>
+              <label>Lijndikte
+                <input type="range" min="0.2" max="4" step="0.1" data-style-layer="{{ name }}" data-style-prop="linewidth" value="{{ styles[name]['linewidth'] }}">
+              </label>
+            </div>
+            {% if tags.values()|select('iterable')|reject('string')|list %}
               {% for key, values in tags.items() if values is iterable and values is not string %}
               <div class="sublayer">
                 <span>{{ key }}</span>
@@ -73,24 +132,11 @@
         </div>
       </div>
 
-      <div class="panel">
-        <h2>Export</h2>
-        <label for="format">Formaat</label>
-        <select id="format">
-          <option value="png" selected>PNG</option>
-          <option value="svg">SVG</option>
-          <option value="pdf">PDF</option>
-        </select>
+      <div class="panel compact-actions">
         <div class="actions">
-          <button id="preview-btn">Preview</button>
-          <button id="download-btn" class="primary">Download</button>
+          <button id="preview-btn-secondary" class="ghost">Preview</button>
+          <button id="download-btn-secondary" class="primary">Download</button>
         </div>
-        <p id="status" aria-live="polite"></p>
-      </div>
-
-      <div class="panel" id="preview-panel">
-        <h2>Preview</h2>
-        <div id="preview">Nog geen preview.</div>
       </div>
     </section>
   </main>
