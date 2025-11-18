@@ -11,9 +11,12 @@ const shapeParamsRoot = document.getElementById('shape-params');
 const statusEl = document.getElementById('status');
 const previewEl = document.getElementById('preview');
 
+const ACTION_BUTTONS = ['preview-btn', 'preview-btn-secondary', 'download-btn', 'download-btn-secondary'];
+
 function setStatus(message, type = 'info') {
+  if (!statusEl) return;
   statusEl.textContent = message || '';
-  statusEl.className = type;
+  statusEl.className = type === 'error' ? 'status-inline error' : 'status-inline';
 }
 
 function readNumber(id, fallback) {
@@ -112,6 +115,21 @@ function collectLayerState() {
   return state;
 }
 
+function collectStyles() {
+  const styles = {};
+  document.querySelectorAll('[data-style-layer]').forEach(input => {
+    const layer = input.dataset.styleLayer;
+    const prop = input.dataset.styleProp;
+    if (!styles[layer]) styles[layer] = {};
+    if (prop === 'linewidth') {
+      styles[layer][prop] = parseFloat(input.value) || 0.5;
+    } else {
+      styles[layer][prop] = input.value;
+    }
+  });
+  return styles;
+}
+
 async function generate(format, showPreview) {
   setStatus('Bezig met genereren...');
   const center = map.getCenter();
@@ -122,6 +140,7 @@ async function generate(format, showPreview) {
     shape: document.querySelector('input[name="shape"]:checked').value,
     format,
     layers: collectLayerState(),
+    styles: collectStyles(),
   };
 
   if (payload.shape === 'circle') {
@@ -209,13 +228,14 @@ function initListeners() {
   document.getElementById('scale').addEventListener('input', updateSelection);
   map.on('moveend', updateSelection);
 
-  document.getElementById('preview-btn').addEventListener('click', () => {
-    const fmt = document.getElementById('format').value;
-    generate(fmt, true);
-  });
-  document.getElementById('download-btn').addEventListener('click', () => {
-    const fmt = document.getElementById('format').value;
-    generate(fmt, false);
+  ACTION_BUTTONS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', () => {
+      const fmt = document.getElementById('format').value;
+      const isPreview = id.includes('preview');
+      generate(fmt, isPreview);
+    });
   });
 }
 
