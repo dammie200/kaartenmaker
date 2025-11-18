@@ -26,15 +26,26 @@ TAGS_PER_LAYER: Dict[str, Dict[str, object]] = {
             "residential",
         ]
     },
-    "Voetpaden": {"highway": ["footway", "path"]},
-    "Water": {"natural": "water"},
+    "Lokale wegen": {"highway": ["unclassified", "living_street", "service"]},
+    "Fiets & wandelen": {"highway": ["cycleway", "path", "footway", "bridleway"]},
+    "Water": {"natural": "water", "waterway": True},
+    "Park & recreatie": {"leisure": ["park", "playground", "garden", "recreation_ground"], "landuse": ["grass", "meadow"]},
     "Bos": {"landuse": "forest"},
+    "Landgebruik": {"landuse": ["residential", "farmland", "orchard", "industrial", "commercial"]},
+    "Spoor": {"railway": ["rail", "light_rail", "subway", "tram", "narrow_gauge"]},
 }
 
 # --- Stijlinstellingen per laag ---
 STYLE_VARS: Dict[str, Dict[str, object]] = {
-    name: {"fill": "#888888", "edge": "#000000", "linewidth": 0.5, "alpha": 1.0}
-    for name in TAGS_PER_LAYER
+    "Gebouwen": {"fill": "#f0e7d3", "edge": "#b89b6d", "linewidth": 0.6, "alpha": 0.95},
+    "Hoofdwegen": {"fill": "#ffd6a5", "edge": "#d35400", "linewidth": 2.6, "alpha": 1.0},
+    "Lokale wegen": {"fill": "#ffe6c7", "edge": "#c47a22", "linewidth": 1.6, "alpha": 1.0},
+    "Fiets & wandelen": {"fill": "#ffffff", "edge": "#6c757d", "linewidth": 1.2, "alpha": 1.0},
+    "Water": {"fill": "#a3d5ff", "edge": "#5dade2", "linewidth": 1.0, "alpha": 0.9},
+    "Park & recreatie": {"fill": "#d6f5d6", "edge": "#7ecb85", "linewidth": 0.8, "alpha": 0.9},
+    "Bos": {"fill": "#c6e6c4", "edge": "#7cb342", "linewidth": 0.9, "alpha": 0.9},
+    "Landgebruik": {"fill": "#f1eadb", "edge": "#c2b596", "linewidth": 0.6, "alpha": 0.6},
+    "Spoor": {"fill": "#f7f7f7", "edge": "#2c3e50", "linewidth": 1.8, "alpha": 1.0},
 }
 
 # Papierformaten (mm)
@@ -173,7 +184,30 @@ def _fetch_geometries(aoi_ll, query):
     return fetch(aoi_ll, query)
 
 
-def _plot_layers(ax, selection: Selection, layers: Dict[str, LayerSelection]):
+def _parse_styles(data: dict) -> Dict[str, Dict[str, object]]:
+    base = {name: STYLE_VARS[name].copy() for name in TAGS_PER_LAYER}
+    overrides = data.get("styles") or {}
+    for name, user_style in overrides.items():
+        if name not in base or not isinstance(user_style, dict):
+            continue
+        fill = user_style.get("fill")
+        edge = user_style.get("edge")
+        linewidth = user_style.get("linewidth")
+        if isinstance(fill, str):
+            base[name]["fill"] = fill
+        if isinstance(edge, str):
+            base[name]["edge"] = edge
+        try:
+            if linewidth is not None:
+                parsed = float(linewidth)
+                if parsed > 0:
+                    base[name]["linewidth"] = parsed
+        except (TypeError, ValueError):
+            pass
+    return base
+
+
+def _plot_layers(ax, selection: Selection, layers: Dict[str, LayerSelection], styles: Dict[str, Dict[str, object]]):
     minx, miny, maxx, maxy = selection.polygon_utm.bounds
     for name, tagdict in TAGS_PER_LAYER.items():
         layer_state = layers[name]
@@ -204,7 +238,7 @@ def _plot_layers(ax, selection: Selection, layers: Dict[str, LayerSelection]):
             continue
         gdf_utm = gdf.to_crs(selection.utm_crs)
         clipped = gpd.clip(gdf_utm, selection.polygon_utm)
-        style = STYLE_VARS[name]
+        style = styles.get(name, STYLE_VARS[name])
         clipped.plot(
             ax=ax,
             color=style["fill"],
@@ -226,6 +260,7 @@ def generate():
 
     selection = _build_selection(data)
     layers = _layer_selection(data)
+    styles = _parse_styles(data)
     fmt = data.get("format", "png").lower()
     if fmt not in {"png", "pdf", "svg"}:
         raise BadRequest("Ondersteund formaat: png, pdf of svg")
@@ -235,7 +270,7 @@ def generate():
     fig_w = ((maxx - minx) / scale) / 0.01 / 2.54
     fig_h = ((maxy - miny) / scale) / 0.01 / 2.54
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
-    _plot_layers(ax, selection, layers)
+    _plot_layers(ax, selection, layers, styles)
 
     scalebar = ScaleBar(1, 'm', length_fraction=0.25, location='lower right', box_alpha=0.0)
     ax.add_artist(scalebar)
