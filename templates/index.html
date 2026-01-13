@@ -53,7 +53,7 @@
             <summary>
               <label><input type="checkbox" class="layer-toggle" data-layer="{{ name }}" checked> {{ name }}</label>
             </summary>
-            {% if tags.values()|select('is sequence')|list %}
+            {% if tags.values()|select('iterable')|reject('string')|list %}
               {% for key, values in tags.items() if values is iterable and values is not string %}
               <div class="sublayer">
                 <span>{{ key }}</span>
